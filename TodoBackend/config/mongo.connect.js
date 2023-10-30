@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 // Replace 'your-database-uri' with your MongoDB connection URI
-const mongoURI = 'mongodb+srv://chiragajmera57:wlCQPlmyMzt9aSYq@chiragajmera.rht24ui.mongodb.net/';
+const mongoURI = 'mongodb+srv://chirag24:D696jNNuiQqMHBM2@chiragajmera.rht24ui.mongodb.net/';
 
 const connectToMongoDB = async () => {
   try {

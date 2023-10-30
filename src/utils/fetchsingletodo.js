@@ -1,19 +1,13 @@
-export function fetchDataWithAuthentication(page) {
+export function fetchsingletodo(id) {
     return new Promise((resolve, reject) => {
       // Get the authentication token from local storage
-      const token = localStorage.getItem('token');
   
-      if (!token) {
-        reject('Authentication token is missing.');
-        return;
-      }
+    console.log(id);
   
       // Set up the request with the token in the headers
-      const headers = new Headers({
-        'Authorization': token,
-      });
+     
   
-      fetch(`http://localhost:8080/fetch-tasks?page=${page}`, { method: 'GET', headers })
+      fetch(`http://localhost:8080/fetch-tasks-id/${id}`, { method: 'GET' })
         .then((response) => {
           if (!response.ok) {
             reject('Request failed with status: ' + response.status);

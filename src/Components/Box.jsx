@@ -4,7 +4,7 @@ import { Box, Divider, Typography } from "@mui/material";
 import CancelIcon from '@mui/icons-material/Cancel';
 import EditIcon from '@mui/icons-material/Edit';
 
-export const Boxes = (ele) => {
+export const Boxes = ({ele,handleDelete,handleUpdate}) => {
   return (
     <Box 
       sx={{
@@ -29,12 +29,17 @@ export const Boxes = (ele) => {
         <Typography>
         {ele.content}
         </Typography>
+        <Divider orientation="vertical" variant="middle" flexItem />
         <Typography>
         {ele.date}
         </Typography>
-        <CancelIcon />
+        <div onClick={()=>handleDelete(ele)}>
+        <CancelIcon  />
+        </div>
         <Divider orientation="vertical" variant="middle" flexItem />
-        <EditIcon />
+        <div onClick={()=>handleUpdate(ele)}> 
+        <EditIcon  />
+        </div>
       </Box>
       
   )

@@ -3,6 +3,8 @@ const connectToMongoDB = require('./config/mongo.connect');
 const User = require('./modal/user.modal');
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const { ObjectId } = require('mongodb');
+
 const cors = require('cors');
 const authenticateUser = require('./middleware/UserAuthenticate');
 const Task = require('./modal/task.modal');
@@ -81,7 +83,7 @@ app.post('/signup', async (req, res) => {
    app.post('/create-task',authenticateUser,async(req,res)=>{
     const {content} = req.body
     const userId = req.user.userId
-    console.log(content,userId);
+    console.log(content);
     try {
         const newNote = new Task({
             content:content,userID:userId
@@ -95,15 +97,37 @@ app.post('/signup', async (req, res) => {
    })
 
 
-  app.get('/fetch-tasks',authenticateUser,async(req,res)=>{
-    const userId = req.user.userId
+   app.get('/fetch-tasks', authenticateUser, async (req, res) => {
+    const userId = req.user.userId;
+    const itemsPerPage = 3; // Number of tasks to fetch per page
+    const page = parseInt(req.query.page) || 1; // Get the page number from the request query, default to page 1
+  
     try {
-        const fetchtask = await Task.find({userID:userId})
-        res.send({fetchtask})
+      const skipCount = (page - 1) * itemsPerPage; // Calculate the number of tasks to skip
+      const tasks = await Task.find({ userID: userId })
+        .skip(skipCount)
+        .limit(itemsPerPage);
+      // Check if there are more tasks available on the next page
+      const totalCount = await Task.countDocuments({ userID: userId });
+      const hasMore = (page * itemsPerPage) < totalCount;
+  
+      res.send({ tasks, hasMore,totalCount });
     } catch (error) {
-        res.status(401).send({msg:"something went wrong"})
+      res.status(401).send({ msg: "Something went wrong" });
     }
-  })
+  });
+
+  app.get('/fetch-tasks-id/:id', async (req, res) => {
+    const {id} = req.params
+    try {
+      const findTask = await Task.findById(id)
+      console.log(findTask);
+      res.send(findTask)
+    } catch (error) {
+      res.send({msg:"something wend wrong"})
+    }
+  });
+  
 
 
   app.post('/update-task/:taskid',authenticateUser,async(req,res)=>{
@@ -115,13 +139,14 @@ app.post('/signup', async (req, res) => {
     if(!findTask){
         res.status(401).send({msg:"no task"})
     }
-    if(findTask.userID!==userId){
-        const timestamp = findTask.userID.getTimestamp()
-        console.log(timestamp,userId);
+    const objectId = new ObjectId(userId);
+    if(!findTask.userID.equals(objectId)){
+      console.log(findTask.userID,objectId);
         return res.status(401).send({msg:"not authorize"})
     }
     try {
-        const update = await Task.findByIdAndUpdate({taskid,content})
+      const update = await Task.findByIdAndUpdate(taskid, { content });
+        
         res.send({msg:"updated"})
     } catch (error) {
         res.status(401).send({msg:"something went wrong"})
@@ -135,7 +160,9 @@ app.post('/signup', async (req, res) => {
     if(!findTask){
         res.status(401).send({msg:"no task"})
     }
-    if(findTask.userID!==userId){
+    const objectId = new ObjectId(userId);
+    if(!findTask.userID.equals(objectId)){
+      console.log(findTask.userID,objectId);
         return res.status(401).send({msg:"not authorize"})
     }
     try {

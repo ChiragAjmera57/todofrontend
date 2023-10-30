@@ -1,18 +1,124 @@
 import React, { useEffect, useState } from "react";
 import CustomizedInputBase from "../Components/SearchBar";
-import { Box, Divider, Typography } from "@mui/material";
-import CancelIcon from '@mui/icons-material/Cancel';
-import EditIcon from '@mui/icons-material/Edit';
+import {  IconButton, InputBase, Paper } from '@mui/material';
+import DownloadDoneIcon from '@mui/icons-material/DownloadDone';
+import {
+  Box,
+  Divider,
+  InputAdornment,
+  Modal,
+  Pagination,
+  TextField,
+  Typography,
+} from "@mui/material";
+import CancelIcon from "@mui/icons-material/Cancel";
+import EditIcon from "@mui/icons-material/Edit";
 import { Boxes } from "../Components/Box";
 import { fetchDataWithAuthentication } from "../utils/fetchtodos";
+import { AccountCircle } from "@mui/icons-material";
+import AddTodo from "../Components/AddTodo";
+import { createTaskWithToken } from "../utils/addtodo";
+import { deleteTaskWithToken } from "../utils/deletetodo";
+import PaginatedList from "./Pageination";
+import UpdateTodo from "../Components/updateTodo";
+import { fetchsingletodo } from "../utils/fetchsingletodo";
+import { updateTask } from "../utils/updatetodo";
 export const Dashboard = () => {
-  console.log(localStorage.getItem('auth'));
-const  [data,setdata]= useState([])
-  useEffect(()=>{
-    
-  })
+  const [data, setdata] = useState([]);
+  const [content, setcontent] = useState("");
+  const [hasMore, setmore] = useState("");
+  const[open,setopen] = useState(false)
+  const[singletoso,setsingle] = useState("")
+  const[updatecontent,setupdatecontent] = useState("")
+  const [total, settotal] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const indexOfLastItem = currentPage * 3;
+  const indexOfFirstItem = indexOfLastItem - 3;
+  const currentItems = data.slice(indexOfFirstItem, indexOfLastItem);
+
+  const totalPages = Math.ceil(total / 3);
+
+  const handlePageChange = (event, page) => {
+    setCurrentPage(page);
+  };
+  const handleUpdate = (e)=>{
+    fetchsingletodo(e._id).then((res)=>{
+      setsingle(res)
+      setupdatecontent(res.content)
+    })
+    setopen(true)
+  }
+
+  const onChange = (e) => {
+    setcontent(e.target.value);
+  };
+  const handleDelete = (e) =>{
+    console.log(e._id);
+    deleteTaskWithToken(e._id).then((res)=>{
+      console.log(res);
+      fetchDataWithAuthentication()
+      .then((data) => {
+        setdata(data.tasks)
+        setmore(data.hasMore)
+        settotal(data.totalCount)
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+    }).catch((err)=>{
+      console.log(err);
+    })
+  }
+  const onSubmitUpdate = (e)=>{
+    updateTask(singletoso._id,updatecontent).then((res)=>{
+      console.log(res);
+      
+      setopen(false)
+    })
+    console.log(singletoso._id);
+    fetchDataWithAuthentication(currentPage)
+    .then((data) => {
+      setdata(data.tasks)
+      setmore(data.hasMore)
+      settotal(data.totalCount)
+    })
+    .catch((error) => {
+      console.error("Error:", error);
+    });
+  }
+  const onSubmit = (e) => {
+    createTaskWithToken(content)
+      .then((res) => {
+        
+        fetchDataWithAuthentication(currentPage)
+        .then((data) => {
+          setdata(data.tasks)
+          setmore(data.hasMore)
+          settotal(data.totalCount)
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+      setcontent("");
+  };
+  useEffect(() => {
+    fetchDataWithAuthentication(currentPage)
+      .then((data) => {
+        setdata(data.tasks)
+        setmore(data.hasMore)
+        settotal(data.totalCount)
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+      });
+  }, [currentPage]);
   return (
-    <div className="dashboard"> 
+    <div className="dashboard">
       <div className="nav">
         <h1>
           <svg
@@ -46,11 +152,57 @@ const  [data,setdata]= useState([])
 
         <CustomizedInputBase />
       </div>
-      {/* {
-        data?.map((ele)=>{
-          return(<Boxes ele={ele} />)
-        })
-      } */}
+      {data?.map((ele) => {
+        return <Boxes key={ele._id} handleUpdate={(e)=>handleUpdate(e)} handleDelete={(e)=>handleDelete(e)} ele={ele} />;
+      })} 
+      <div
+        className="addtodo"
+        style={{ display: "flex", justifyContent: "center" }}
+      >
+        <AddTodo
+          value={content}
+          onChange={(e) => onChange(e)}
+          onSubmit={(e) => onSubmit(e)}
+        />
+      </div>
+      <div style={{ display: "flex", justifyContent: "center",marginTop:'15px' }} >
+     
+
+     <Pagination
+       count={totalPages}
+       page={currentPage}
+       onChange={handlePageChange}
+       color="primary"
+       variant="outlined"
+       shape="rounded"
+     />
+   </div>
+   <Modal
+   open={open}
+   onClose={()=>setopen(false)}
+
+   >
+    <div>modal
+    <Paper
+      component="form"
+      sx={{ p: '2px 2px', display: 'flex', alignItems: 'center', width: 400,marginTop:'15px' }}
+    >
+      <IconButton sx={{ p: '10px' }} aria-label="menu">
+      </IconButton>
+      <InputBase
+        sx={{ ml: 1, flex: 1 }}
+        placeholder="Add Todos"
+        value={updatecontent}
+        inputProps={{ 'aria-label': 'add todos' }}
+        onChange={(e)=>setupdatecontent(e.target.value)}
+      />
+      <IconButton onClick={(e)=>onSubmitUpdate(e)} type="button" sx={{ p: '10px' }} aria-label="search">
+        <DownloadDoneIcon  />
+      </IconButton>
+      
+    </Paper>
+    </div>
+   </Modal>
     </div>
   );
 };
